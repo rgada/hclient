@@ -20,7 +20,10 @@ package org.apache.hadoop.hive.metastore.tools;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.metastore.MetaStoreUtils;
+import org.apache.hadoop.hive.metastore.utils.MetaStoreUtils;
+import org.apache.hadoop.hive.metastore.utils.SecurityUtils;
+import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
+import org.apache.hadoop.hive.metastore.conf.MetastoreConf.ConfVars;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.DropPartitionsRequest;
 import org.apache.hadoop.hive.metastore.api.DropPartitionsResult;
@@ -29,17 +32,16 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.RequestPartsSpec;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore;
-import org.apache.hadoop.hive.shims.ShimLoader;
-import org.apache.hadoop.hive.shims.Utils;
-import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
+import org.apache.hadoop.hive.metastore.security.HadoopThriftAuthBridge;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TFastFramedTransport;
+import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -390,51 +392,88 @@ public final class HMSClient implements AutoCloseable {
   }
 
   private TTransport open(HiveConf conf, @NotNull URI uri) throws
-      TException, IOException, LoginException {
-    boolean useSasl = conf.getBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_SASL);
-    boolean useFramedTransport = conf.getBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_FRAMED_TRANSPORT);
-    boolean useCompactProtocol = conf.getBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_COMPACT_PROTOCOL);
+      TException, IOException, LoginException, IllegalArgumentException {
+    boolean useSSL = MetastoreConf.getBoolVar(conf, ConfVars.USE_SSL);
+    boolean useSasl = MetastoreConf.getBoolVar(conf, ConfVars.USE_THRIFT_SASL);
+    String clientAuthMode = MetastoreConf.getVar(conf, ConfVars.METASTORE_CLIENT_AUTH_MODE);
+    boolean usePasswordAuth = false;
+    boolean useFramedTransport = MetastoreConf.getBoolVar(conf, ConfVars.USE_THRIFT_FRAMED_TRANSPORT);
+    boolean useCompactProtocol = MetastoreConf.getBoolVar(conf, ConfVars.USE_THRIFT_COMPACT_PROTOCOL);
+    int clientSocketTimeout = (int) MetastoreConf.getTimeVar(conf,
+        ConfVars.CLIENT_SOCKET_TIMEOUT, TimeUnit.MILLISECONDS);
+
+    if (clientAuthMode != null && "PLAIN".equalsIgnoreCase(clientAuthMode)) {
+      throw new IllegalArgumentException("HMS Password Auth mode is not supported!");
+    }
+
     LOG.debug("Connecting to {}, framedTransport = {}", uri, useFramedTransport);
 
-    transport = new TSocket(uri.getHost(), uri.getPort(), (int) SOCKET_TIMEOUT_MS);
+    if (useSSL) {
+      try {
+        String trustStorePath = MetastoreConf.getVar(conf, ConfVars.SSL_TRUSTSTORE_PATH).trim();
+        if (trustStorePath.isEmpty()) {
+          throw new IllegalArgumentException(ConfVars.SSL_TRUSTSTORE_PATH.toString()
+              + " Not configured for SSL connection");
+        }
+        String trustStorePassword =
+            MetastoreConf.getPassword(conf, MetastoreConf.ConfVars.SSL_TRUSTSTORE_PASSWORD);
+        String trustStoreType =
+            MetastoreConf.getVar(conf, ConfVars.SSL_TRUSTSTORE_TYPE).trim();
+        String trustStoreAlgorithm =
+            MetastoreConf.getVar(conf, ConfVars.SSL_TRUSTMANAGERFACTORY_ALGORITHM).trim();
+        // Create an SSL socket and connect
+        transport = SecurityUtils.getSSLSocket(uri.getHost(), uri.getPort(), clientSocketTimeout,
+            trustStorePath, trustStorePassword, trustStoreType, trustStoreAlgorithm );
+        LOG.info("Opened an SSL connection to metastore");
+      } catch(IOException e) {
+        throw new IllegalArgumentException(e);
+      } catch(TTransportException e) {
+        throw new MetaException(e.toString());
+      }
+    } else {
+      transport = new TSocket(uri.getHost(), uri.getPort(), clientSocketTimeout);
+    }
 
     if (useSasl) {
       LOG.debug("Using SASL authentication");
       HadoopThriftAuthBridge.Client authBridge =
-          ShimLoader.getHadoopThriftAuthBridge().createClient();
+          HadoopThriftAuthBridge.getBridge().createClient();
       // check if we should use delegation tokens to authenticate
       // the call below gets hold of the tokens if they are set up by hadoop
       // this should happen on the map/reduce tasks if the client added the
       // tokens into hadoop's credential store in the front end during job
       // submission.
-      String tokenSig = conf.get("hive.metastore.token.signature");
+      String tokenSig = MetastoreConf.getVar(conf, ConfVars.TOKEN_SIGNATURE);
       // tokenSig could be null
-      String tokenStrForm = Utils.getTokenStrForm(tokenSig);
+      String tokenStrForm = SecurityUtils.getTokenStrForm(tokenSig);
       if (tokenStrForm != null) {
         LOG.debug("Using delegation tokens");
         // authenticate using delegation tokens via the "DIGEST" mechanism
         transport = authBridge.createClientTransport(null, uri.getHost(),
             "DIGEST", tokenStrForm, transport,
-            MetaStoreUtils.getMetaStoreSaslProperties(conf));
+            MetaStoreUtils.getMetaStoreSaslProperties(conf, useSSL));
       } else {
         LOG.debug("Using principal");
         String principalConfig =
-            conf.getVar(HiveConf.ConfVars.METASTORE_KERBEROS_PRINCIPAL);
+            MetastoreConf.getVar(conf, ConfVars.KERBEROS_PRINCIPAL);
         LOG.debug("Using principal {}", principalConfig);
         transport = authBridge.createClientTransport(
             principalConfig, uri.getHost(), "KERBEROS", null,
-            transport, MetaStoreUtils.getMetaStoreSaslProperties(conf));
+            transport, MetaStoreUtils.getMetaStoreSaslProperties(conf, useSSL));
+      }
+    } else {
+      if (useFramedTransport) {
+        transport = new TFramedTransport(transport);
       }
     }
 
-    transport = useFramedTransport ? new TFastFramedTransport(transport) : transport;
     TProtocol protocol = useCompactProtocol ?
         new TCompactProtocol(transport) :
         new TBinaryProtocol(transport);
     client = new ThriftHiveMetastore.Client(protocol);
     transport.open();
-    if (!useSasl && conf.getBoolVar(HiveConf.ConfVars.METASTORE_EXECUTE_SET_UGI)) {
-      UserGroupInformation ugi = Utils.getUGI();
+    if (!useSasl && MetastoreConf.getBoolVar(conf, ConfVars.EXECUTE_SET_UGI)) {
+      UserGroupInformation ugi = SecurityUtils.getUGI();
       client.set_ugi(ugi.getUserName(), Arrays.asList(ugi.getGroupNames()));
       LOG.debug("Set UGI for {}", ugi.getUserName());
     }
