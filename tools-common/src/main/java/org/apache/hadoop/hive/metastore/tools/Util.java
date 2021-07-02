@@ -239,8 +239,8 @@ public final class Util {
       this.tableName = tableName;
     }
 
-    public static Table buildDefaultTable(String dbName, String tableName) {
-      return new TableBuilder(dbName, tableName).build();
+    public static Table buildDefaultTable(String dbName, String tableName, int nColumns) {
+      return new TableBuilder(dbName, tableName).build(nColumns);
     }
 
     public TableBuilder withType(TableType tabeType) {
@@ -288,10 +288,14 @@ public final class Util {
       return this;
     }
 
-    public Table build() {
+    public Table build(int nColumns) {
       StorageDescriptor sd = new StorageDescriptor();
       if (columns == null) {
-        sd.setCols(Collections.emptyList());
+        if (nColumns>1) {
+          sd.setCols(createWideSchema(nColumns));
+        } else {
+          sd.setCols(Collections.emptyList());
+        }
       } else {
         sd.setCols(columns);
       }
@@ -398,6 +402,27 @@ public final class Util {
     return params.stream()
             .map(Util::param2Schema)
             .collect(Collectors.toList());
+  }
+
+  /**
+   * Create table schema with many columns.
+   * 
+   * @param nColumns number of columns to generate
+   * @return table schema description
+   */
+  public static List<FieldSchema> createWideSchema(int nColumns) {
+    List<FieldSchema> fields = new ArrayList<FieldSchema>(nColumns);
+    String _format = "_%d";
+    for (int i = 1; i < (nColumns / 2)+1; i++) {
+      fields.add(new FieldSchema("id"+String.format(_format, i), "int", ""));
+    }
+    if ( (nColumns & 1) != 0 ) {
+        nColumns++;
+    }
+    for (int i = 1; i < (nColumns / 2)+1; i++) {
+      fields.add(new FieldSchema("txt"+String.format(_format, i), "string", ""));
+    }
+    return fields;
   }
 
   /**

@@ -56,7 +56,7 @@ public class HMSClientTest {
 
   private static final String TEST_TABLE_NAME="test1";
   private static final Table TEST_TABLE =
-      Util.TableBuilder.buildDefaultTable(TEST_DATABASE, TEST_TABLE_NAME);
+      Util.TableBuilder.buildDefaultTable(TEST_DATABASE, TEST_TABLE_NAME,5);
 
   private static HMSClient client = null;
 

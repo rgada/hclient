@@ -67,7 +67,7 @@ public class MetastoreJMHBenchmarks {
                     .withType(TableType.MANAGED_TABLE)
                     .withColumns(createSchema(Collections.singletonList("name:string")))
                     .withPartitionKeys(createSchema(Collections.singletonList("date")))
-                    .build()));
+                    .build(0)));
   }
 
   public static void main(String[] args) throws RunnerException {
@@ -121,7 +121,7 @@ public class MetastoreJMHBenchmarks {
       if (tableName == null) {
         tableName = DEFAULT_TABLE_NAME;
       }
-      table = Util.TableBuilder.buildDefaultTable(dbName, tableName);
+      table = Util.TableBuilder.buildDefaultTable(dbName, tableName, 0);
     }
 
     @TearDown(Level.Trial)
@@ -153,7 +153,7 @@ public class MetastoreJMHBenchmarks {
       if (tableName == null) {
         tableName = DEFAULT_TABLE_NAME;
       }
-      table = Util.TableBuilder.buildDefaultTable(dbName, tableName);
+      table = Util.TableBuilder.buildDefaultTable(dbName, tableName, 0);
     }
 
     @TearDown(Level.Trial)

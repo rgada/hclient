@@ -231,7 +231,7 @@ final class HMSTool {
       client.createTable(new Util.TableBuilder(dbName, tableName)
           .withColumns(Util.createSchema(arguments))
           .withPartitionKeys(Util.createSchema(partitionInfo))
-          .build());
+          .build(0));
       LOG.info("Created table '" + tableName + "'");
     } else {
       Set<String> tables = client.getAllTables(dbName, null);
@@ -251,7 +251,7 @@ final class HMSTool {
         client.createTable(new Util.TableBuilder(dbName, tableName)
             .withColumns(Util.createSchema(arguments))
             .withPartitionKeys(Util.createSchema(partitionInfo))
-            .build());
+            .build(0));
         tables.add(tbl);
       }
     }
