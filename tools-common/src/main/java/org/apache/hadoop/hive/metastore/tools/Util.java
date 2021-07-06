@@ -505,8 +505,8 @@ public final class Util {
   static List<Partition> createManyPartitions(@NotNull Table table,
                                               @Nullable Map<String, String> parameters,
                                               @NotNull List<String> arguments,
-                                              int npartitions) {
-    return IntStream.range(0, npartitions)
+                                              int nPartitions) {
+    return IntStream.range(0, nPartitions)
             .mapToObj(i ->
                     new PartitionBuilder(table)
                             .withParameters(parameters)
@@ -532,14 +532,14 @@ public final class Util {
                                   @NotNull String tableName,
                                   @Nullable Map<String, String> parameters,
                                   @NotNull List<String> arguments,
-                                  int npartitions) throws TException {
+                                  int nPartitions) throws TException {
     Table table = client.getTable(dbName, tableName);
-    client.addPartitions(createManyPartitions(table, parameters, arguments, npartitions));
+    client.addPartitions(createManyPartitions(table, parameters, arguments, nPartitions));
     return null;
   }
 
-  static List<String> generatePartitionNames(@NotNull String prefix, int npartitions) {
-    return IntStream.range(0, npartitions).mapToObj(i -> prefix + i).collect(Collectors.toList());
+  static List<String> generatePartitionNames(@NotNull String prefix, int nPartitions) {
+    return IntStream.range(0, nPartitions).mapToObj(i -> prefix + i).collect(Collectors.toList());
   }
 
   static void addManyPartitionsNoException(@NotNull HMSClient client,
@@ -547,9 +547,9 @@ public final class Util {
                                            @NotNull String tableName,
                                            @Nullable Map<String, String> parameters,
                                            List<String> arguments,
-                                           int npartitions) {
+                                           int nPartitions) {
     throwingSupplierWrapper(() ->
-            addManyPartitions(client, dbName, tableName, parameters, arguments, npartitions));
+            addManyPartitions(client, dbName, tableName, parameters, arguments, nPartitions));
   }
 
   /**

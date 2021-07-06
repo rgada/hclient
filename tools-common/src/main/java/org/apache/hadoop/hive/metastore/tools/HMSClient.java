@@ -19,7 +19,6 @@
 package org.apache.hadoop.hive.metastore.tools;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.utils.MetaStoreUtils;
 import org.apache.hadoop.hive.metastore.utils.SecurityUtils;
 import org.apache.hadoop.hive.metastore.conf.MetastoreConf;
@@ -67,13 +66,10 @@ import java.util.stream.Collectors;
  */
 public final class HMSClient implements AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(HMSClient.class);
-  private static final String METASTORE_URI = "hive.metastore.uris";
   private static final String CONFIG_DIR = "/etc/hive/conf";
   private static final String HIVE_SITE = "hive-site.xml";
   private static final String CORE_SITE = "core-site.xml";
-  private static final String PRINCIPAL_KEY = "hive.metastore.kerberos.principal";
-  private static final long SOCKET_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(600);
-
+  
   private final String confDir;
   private ThriftHiveMetastore.Iface client;
   private TTransport transport;
@@ -126,10 +122,10 @@ public final class HMSClient implements AutoCloseable {
   private void addResource(Configuration conf, @NotNull String r) throws MalformedURLException {
     File f = new File(confDir + "/" + r);
     if (f.exists() && !f.isDirectory()) {
-      LOG.debug("Adding configuration resource {}", r);
+      LOG.debug("Adding configuration resource {}", confDir+"/"+r);
       conf.addResource(f.toURI().toURL());
     } else {
-      LOG.debug("Configuration {} does not exist", r);
+      LOG.debug("Configuration {} does not exist", confDir+"/"+r);
     }
   }
 
@@ -144,27 +140,26 @@ public final class HMSClient implements AutoCloseable {
    */
   private void getClient(@Nullable URI uri)
       throws TException, IOException, InterruptedException, URISyntaxException, LoginException {
-    HiveConf conf = new HiveConf();
+    Configuration conf = new Configuration(); //use Conf instead of MetadataConf to omit init INFO logs
     addResource(conf, HIVE_SITE);
     if (uri != null) {
-      conf.set(METASTORE_URI, uri.toString());
+      MetastoreConf.setVar(conf, ConfVars.THRIFT_URIS, uri.toString());
     }
 
     // Pick up the first URI from the list of available URIs
     serverURI = uri != null ?
         uri :
-        new URI(conf.get(METASTORE_URI).split(",")[0]);
+        new URI(MetastoreConf.getVar(conf, ConfVars.THRIFT_URIS).split(",")[0]);
 
-    String principal = conf.get(PRINCIPAL_KEY);
-    // TODO fixme
-    // String principal = null;
+    String principal = MetastoreConf.getVar(conf, ConfVars.KERBEROS_PRINCIPAL);
 
     if (principal == null) {
+      LOG.debug("Opening non-kerberos connection to HMS {}", serverURI);
       open(conf, serverURI);
       return;
     }
 
-    LOG.debug("Opening kerberos connection to HMS");
+    LOG.debug("Opening kerberos connection to HMS {}", serverURI);
     addResource(conf, CORE_SITE);
 
     Configuration hadoopConf = new Configuration();
@@ -230,7 +225,7 @@ public final class HMSClient implements AutoCloseable {
 
   /**
    * Get all table names for a database matching the filter.
-   * If filter is null or emoty, return all table names. This call does not use
+   * If filter is null or empty, return all table names. This call does not use
    * native HMS table name matching, it uses client-side regexp matching instead.
    *
    * @param dbName Database name
@@ -262,7 +257,7 @@ public final class HMSClient implements AutoCloseable {
    * Create database with the given name if it doesn't exist
    *
    * @param name database name
-   * @return True if successfull, false otherwise
+   * @return True if successful, false otherwise
    * @throws TException if the call fails
    */
   public boolean createDatabase(@NotNull String name) throws TException {
@@ -275,7 +270,7 @@ public final class HMSClient implements AutoCloseable {
    * @param description Database description
    * @param location Database location
    * @param params Database params
-   * @return True if successfull, false otherwise
+   * @return True if successful, false otherwise
    * @throws TException if call fails
    */
   public boolean createDatabase(@NotNull String name,
@@ -391,12 +386,11 @@ public final class HMSClient implements AutoCloseable {
     client.append_partition_with_environment_context(dbName, tableName, partitionValues, null);
   }
 
-  private TTransport open(HiveConf conf, @NotNull URI uri) throws
+  private TTransport open(Configuration conf, @NotNull URI uri) throws
       TException, IOException, LoginException, IllegalArgumentException {
     boolean useSSL = MetastoreConf.getBoolVar(conf, ConfVars.USE_SSL);
     boolean useSasl = MetastoreConf.getBoolVar(conf, ConfVars.USE_THRIFT_SASL);
     String clientAuthMode = MetastoreConf.getVar(conf, ConfVars.METASTORE_CLIENT_AUTH_MODE);
-    boolean usePasswordAuth = false;
     boolean useFramedTransport = MetastoreConf.getBoolVar(conf, ConfVars.USE_THRIFT_FRAMED_TRANSPORT);
     boolean useCompactProtocol = MetastoreConf.getBoolVar(conf, ConfVars.USE_THRIFT_COMPACT_PROTOCOL);
     int clientSocketTimeout = (int) MetastoreConf.getTimeVar(conf,
@@ -424,7 +418,7 @@ public final class HMSClient implements AutoCloseable {
         // Create an SSL socket and connect
         transport = SecurityUtils.getSSLSocket(uri.getHost(), uri.getPort(), clientSocketTimeout,
             trustStorePath, trustStorePassword, trustStoreType, trustStoreAlgorithm );
-        LOG.info("Opened an SSL connection to metastore");
+        LOG.debug("Opened an SSL connection to metastore");
       } catch(IOException e) {
         throw new IllegalArgumentException(e);
       } catch(TTransportException e) {
