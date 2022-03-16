@@ -381,9 +381,9 @@ final class HMSBenchmarks {
       addManyPartitionsNoException(client, dbName, tableName, null,
           Collections.singletonList("d"), count);
       Table oldTable = client.getTable(dbName, tableName);
-      oldTable.getSd().setLocation("");
       Table newTable = oldTable.deepCopy();
       newTable.setTableName(tableName + "_renamed");
+      newTable.getSd().setLocation(oldTable.getSd().getLocation());
 
       return bench.measure(
           () -> {
