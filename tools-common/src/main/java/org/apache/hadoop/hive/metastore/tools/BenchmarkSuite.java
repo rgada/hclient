@@ -223,6 +223,23 @@ public final class BenchmarkSuite {
   }
 
   /**
+   * Produce printable result
+   * @param fmt text formatter - destination of formatted results.
+   * @param name benchmark name
+   * @param stats benchmark data
+   */
+  private void displayStatsResponseTime(@NotNull Formatter fmt, @NotNull String name,
+                            @NotNull DescriptiveStatistics stats) {
+    double[] responseTimeArray = stats.getValues();
+
+    for (double value : responseTimeArray) {
+      fmt.format("%-30s %-8.4g%n",
+      name,value);
+    }
+
+  }
+  
+  /**
    * Produce results in printable CSV format, separated by separator.
    * @param fmt text formatter - destination of formatted results.
    * @param name benchmark name
@@ -251,6 +268,23 @@ public final class BenchmarkSuite {
   }
 
   /**
+   * Produce results in printable CSV format, separated by separator.
+   * @param fmt text formatter - destination of formatted results.
+   * @param name benchmark name
+   * @param stats benchmark data
+   * @param separator field separator
+   */
+  private void displayCSVResponseTime(@NotNull Formatter fmt, @NotNull String name,
+                          @NotNull DescriptiveStatistics stats, @NotNull String separator) {
+    double[] responseTimeArray = stats.getValues();
+
+    for (double value : responseTimeArray) {
+      fmt.format("%s%s%g%n",
+      name, separator,value);      
+    }
+  }
+  
+  /**
    * Format all results
    * @param fmt text formatter - destination of formatted results.
    * @return this
@@ -263,6 +297,18 @@ public final class BenchmarkSuite {
   }
 
   /**
+   * Format all results
+   * @param fmt text formatter - destination of formatted results.
+   * @return this
+   */
+  BenchmarkSuite displayResponseTime(Formatter fmt) {
+    fmt.format("%-30s %-8s%n",
+        "Operation", "RespTime");
+    result.forEach((name, stat) -> displayStatsResponseTime(fmt, name, stat));
+    return this;
+  }
+  
+  /**
    * Format all results in CSV format
    * @param fmt text formatter - destination of formatted results.
    * @param separator field separator
@@ -274,6 +320,19 @@ public final class BenchmarkSuite {
         separator, "Max", separator, "SD%", separator, "pc95",
         separator, "pc97", separator, "Var");
     result.forEach((name, s) -> displayCSV(fmt, name, s, separator));
+    return this;
+  }
+
+  /**
+   * Format all results in CSV format with response times in each
+   * @param fmt text formatter - destination of formatted results.
+   * @param separator field separator
+   * @return this
+   */
+  BenchmarkSuite displayCSVResponseTime(Formatter fmt, String separator) {
+    fmt.format("%s%s%s%n",
+        "Operation", separator, "ResponseTime");
+    result.forEach((name, s) -> displayCSVResponseTime(fmt, name, s, separator));
     return this;
   }
 }

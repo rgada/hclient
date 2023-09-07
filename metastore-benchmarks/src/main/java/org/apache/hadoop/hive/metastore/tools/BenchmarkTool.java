@@ -96,6 +96,9 @@ public class BenchmarkTool implements Runnable {
   @Option(names = {"-C", "--csv"}, description = "produce CSV output")
   private boolean doCSV = false;
 
+  @Option(names = {"-CR", "--csvr"}, description = "produce response time CSV output")
+  private boolean doCSVR = false;
+
   @Option(names = {"--params"}, description = "number of table/partition parameters")
   private int nParameters = 0;
 
@@ -234,7 +237,11 @@ public class BenchmarkTool implements Runnable {
       Formatter fmt = new Formatter(sb);
       if (doCSV) {
         result.displayCSV(fmt, csvSeparator);
-      } else {
+      }
+      else if (doCSVR) {
+        result.displayCSVResponseTime(fmt, csvSeparator);
+      } 
+      else {
         result.display(fmt);
       }
 
