@@ -204,16 +204,22 @@ public final class BenchmarkSuite {
   private void displayStats(@NotNull Formatter fmt, @NotNull String name,
                             @NotNull DescriptiveStatistics stats) {
     double mean = stats.getMean();
-    double err = stats.getStandardDeviation() / mean * 100;
+    double SD = stats.getStandardDeviation() / mean * 100;
     long conv = scale.toNanos(1);
+    double var = stats.getVariance();
+    double perc95 = stats.getPercentile(95.0);
+    double perc97 = stats.getPercentile(97.0);
 
-    fmt.format("%-30s %-8.4g %-8.4g %-8.4g %-8.4g %-8.4g%n",
+    fmt.format("%-30s %-8.4g %-8.4g %-8.4g %-8.4g %-8.4g %-8.4g %-8.4g %-8.4g%n",
         name,
         mean / conv,
         median(stats) / conv,
         stats.getMin() / conv,
         stats.getMax() / conv,
-        err);
+        SD,
+        perc95/conv,
+        perc97/conv,
+        var/conv);
   }
 
   /**
@@ -226,16 +232,22 @@ public final class BenchmarkSuite {
   private void displayCSV(@NotNull Formatter fmt, @NotNull String name,
                           @NotNull DescriptiveStatistics stats, @NotNull String separator) {
     double mean = stats.getMean();
-    double err = stats.getStandardDeviation() / mean * 100;
+    double SD = stats.getStandardDeviation() / mean * 100;
+    double var = stats.getVariance();
+    double perc95 = stats.getPercentile(95.0);
+    double perc97 = stats.getPercentile(97.0);
     long conv = scale.toNanos(1);
 
-    fmt.format("%s%s%g%s%g%s%g%s%g%s%g%n",
+    fmt.format("%s%s%g%s%g%s%g%s%g%s%g%s%g%s%g%s%g%n",
         name, separator,
         mean / conv, separator,
         median(stats) / conv, separator,
         stats.getMin() / conv, separator,
         stats.getMax() / conv, separator,
-        err);
+        SD, separator,
+        perc95/conv, separator,
+        perc97/conv, separator,
+        var/conv);
   }
 
   /**
@@ -244,8 +256,8 @@ public final class BenchmarkSuite {
    * @return this
    */
   BenchmarkSuite display(Formatter fmt) {
-    fmt.format("%-30s %-8s %-8s %-8s %-8s %-8s%n",
-        "Operation", "Mean", "Med", "Min", "Max", "Err%");
+    fmt.format("%-30s %-8s %-8s %-8s %-8s %-8s %-8s %-8s %-8s%n",
+        "Operation", "Mean", "Med", "Min", "Max", "SD%","pc95","pc97","var");
     result.forEach((name, stat) -> displayStats(fmt, name, stat));
     return this;
   }
@@ -257,9 +269,10 @@ public final class BenchmarkSuite {
    * @return this
    */
   BenchmarkSuite displayCSV(Formatter fmt, String separator) {
-    fmt.format("%s%s%s%s%s%s%s%s%s%s%s%n",
+    fmt.format("%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%n",
         "Operation", separator, "Mean", separator, "Med", separator, "Min",
-        separator, "Max", separator, "Err%");
+        separator, "Max", separator, "SD%", separator, "pc95",
+        separator, "pc97", separator, "Var");
     result.forEach((name, s) -> displayCSV(fmt, name, s, separator));
     return this;
   }
