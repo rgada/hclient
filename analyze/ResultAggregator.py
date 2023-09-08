@@ -1,3 +1,6 @@
+## usage
+# python3 analyze/ResultAggregator.py --runId temp1
+
 import argparse
 
 # read all the csv files in the folder

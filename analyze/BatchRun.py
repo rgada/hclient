@@ -2,7 +2,8 @@
 ### Hbench command aggregator
 
 Usage:
-nohup python3 batchRun.py -t 20 -c 100 -p 500 -i 1000 -o descending -l "8GBHeap_Pool10_instance1" -s "-H dbrscale-w5f1fv-gateway0.dbrscale.svbr-nqvp.int.cldr.work --savedata /tmp/benchdata --sanitize -M 'addPartition' -M 'getPartitions' -M 'getPartitionNames' -M 'dropPartitions' -M 'getTable'" &
+nohup python3 analyze/BatchRun.py -t 5,10,20 -c 102,502,1002 -p 100,500,1000 -i 100,1000 -o descending -l "8GBHeap_Pool10_instance1" -s "-H dbrscale-w5f1fv-gateway0.dbrscale.svbr-nqvp.int.cldr.work --savedata /tmp/benchdata --sanitize -CR -M 'addPartition' -M 'getPartitions' -M 'getPartitionNames' -M 'dropPartitions' -M 'getTable'" &
+
 
 Out:
 multiple csv for each configuration
@@ -24,7 +25,7 @@ def execute_run(cmdList):
     try:
         for cmd in cmdList:
             logger.info("running cmd - "+cmd)
-            subprocess.Popen(["bin/hbench",cmd])
+            subprocess.call(["bin/hbench",cmd])
     except:
         logger.info("oops some problem injecting " + str(x))
 
