@@ -231,15 +231,8 @@ public class BenchmarkTool implements Runnable {
         client.dropTable(dbName, tableName);
       }
 
-      BenchmarkSuite result = new BenchmarkSuite();
-      try
-      {
-        // Arrange various benchmarks in a suite
-        result = suite.runMatching(matches, exclude);
-      }
-      catch (Exception e) {
-        LOG.info("Exception while running script");        
-      }
+      // Arrange various benchmarks in a suite
+      BenchmarkSuite result = suite.runMatching(matches, exclude);
 
       Formatter fmt = new Formatter(sb);
       if (doCSV) {
