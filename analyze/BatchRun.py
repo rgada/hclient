@@ -37,16 +37,16 @@ def main(argv):
     instances = [100]
 
     try:
-        opts, args = getopt.getopt(argv, "ht:c:p:i:o:s:l:",
-                                   ["help", "numThreads=", "numCols=", "numPart=", "numInstances=","order=","script=","capacitytag="])
+        opts, args = getopt.getopt(argv, "ht:c:p:i:o:s:l:r:",
+                                   ["help", "numThreads=", "numCols=", "numPart=", "numInstances=","order=","script=","capacitytag=","runtag="])
     except getopt.GetoptError:
         logger.info(
-            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag>')
+            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag>')
         sys.exit(2)
 
     if len(opts) == 0:
         logger.info(
-            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag>')
+            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag>')
         sys.exit(2)
 
     print(opts)
@@ -87,6 +87,8 @@ def main(argv):
             script = arg
         elif opt in ("-l", "--capacitytag"):
             capacity_tag = arg
+        elif opt in ("-r", "--run"):
+            run_tag = arg
 
     out = []
     files = []
@@ -151,7 +153,7 @@ def main(argv):
         for curr in currInstances:
             cmd = cmd + INSTANCES+" "+curr+" "
             file = file + f"{curr}{INSTANCES.split('-')[-1]}"
-        file = capacity_tag + "_" + file
+        file = "Run"+run_tag+str(index)+"_"+file + "_" + capacity_tag
         cmd = cmd + OUTPUT + " "+file+".csv" + " "+ DBNAME + " " + file
         cmd = script +" "+ cmd
         #print(cmd)
