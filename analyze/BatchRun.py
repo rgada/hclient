@@ -19,6 +19,9 @@ import time
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+DEFAULT_SPIN = 100
+SPIN_COUNT = "--spin"
+
 def execute_run(cmdList):
 
     try:
@@ -27,11 +30,14 @@ def execute_run(cmdList):
             cmdsplits = cmd.split(';')
 
             currinstance = 0
+            spincount = int(float(DEFAULT_SPIN / len(cmdsplits)))
             for currcmd in cmdsplits:
                 if currinstance == (len(cmdsplits) - 1):
+                    currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount)
                     logger.info("waiting for cmd - "+currcmd)
                     subprocess.call(["bin/hbench",currcmd])
                 else:
+                    currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount)
                     logger.info("triggering background for cmd - "+currcmd)
                     subprocess.Popen(["bin/hbench",currcmd])
                 currinstance = currinstance + 1
