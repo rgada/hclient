@@ -19,13 +19,22 @@ import time
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-
 def execute_run(cmdList):
 
     try:
         for cmd in cmdList:
-            logger.info("running cmd - "+cmd)
-            subprocess.call(["bin/hbench",cmd])
+
+            cmdsplits = cmd.split(';')
+
+            currinstance = 0
+            for currcmd in cmdsplits:
+                if currinstance == (len(cmdsplits) - 1):
+                    logger.info("waiting for cmd - "+currcmd)
+                    subprocess.call(["bin/hbench",currcmd])
+                else:
+                    logger.info("triggering background for cmd - "+currcmd)
+                    subprocess.Popen(["bin/hbench",currcmd])
+                currinstance = currinstance + 1
     except:
         logger.info("oops some problem injecting " + str(x))
 
@@ -37,16 +46,16 @@ def main(argv):
     instances = [100]
 
     try:
-        opts, args = getopt.getopt(argv, "ht:c:p:i:o:s:l:r:",
-                                   ["help", "numThreads=", "numCols=", "numPart=", "numInstances=","order=","script=","capacitytag=","runtag="])
+        opts, args = getopt.getopt(argv, "ht:c:p:i:o:s:l:r:u:",
+                                   ["help", "numThreads=", "numCols=", "numPart=", "numInstances=","order=","script=","capacitytag=","runtag=","hosturi="])
     except getopt.GetoptError:
         logger.info(
-            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag>')
+            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi>')
         sys.exit(2)
 
     if len(opts) == 0:
         logger.info(
-            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag>')
+            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi>')
         sys.exit(2)
 
     print(opts)
@@ -57,13 +66,14 @@ def main(argv):
     PARTITIONS = "--params"
     OUTPUT = "-o"
     DBNAME = "-d"
+    HOST="-H"
     ASCENDING = "ascending"
     DESCENDING = "descending"
 
     for opt, arg in opts:
         if opt == '-h':
             logger.info(
-                'hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag>')
+                'hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi>')
             sys.exit()
         elif opt in ("-t", "--numThreads"):
             threadsString = arg
@@ -89,6 +99,8 @@ def main(argv):
             capacity_tag = arg
         elif opt in ("-r", "--run"):
             run_tag = arg
+        elif opt in ("-u", "--hosturi"):
+            hosts = arg
 
     out = []
     files = []
@@ -154,8 +166,29 @@ def main(argv):
             cmd = cmd + INSTANCES+" "+curr+" "
             file = file + f"{curr}{INSTANCES.split('-')[-1]}"
         file = "Run"+run_tag+str(index)+"_"+file + "_" + capacity_tag
-        cmd = cmd + OUTPUT + " "+file+".csv" + " "+ DBNAME + " " + file
-        cmd = script +" "+ cmd
+
+        cmd_base = cmd + DBNAME + " " + file
+
+        # we have multiple hosts, run in parallel and generate comma seperate commands
+        hostsplits = hosts.split(',')
+        
+        hostinstance = 0
+        cmd = ""
+        for host in hostsplits:
+            file_name = file + "#" + str(hostinstance)
+
+            curr = cmd_base + " " +OUTPUT + " "+file_name+".csv"
+            
+            curr = HOST + " " + host + " " + script +" "+ curr
+
+            # add delimiter
+            if (hostinstance < (len(hostsplits) - 1)):
+                cmd = cmd + curr + ";"
+            else:
+                cmd = cmd + curr
+
+            hostinstance = hostinstance + 1
+
         #print(cmd)
         if cmd not in fullcmd:
             fullcmd.append(cmd)

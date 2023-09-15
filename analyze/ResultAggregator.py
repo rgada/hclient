@@ -28,6 +28,9 @@ runId = args.runId
 
 for csvfile in csvfiles:
     df = pd.read_csv(csvfile,delimiter='\t')
+    if "#" in csvfile:
+        csvfile = csvfile.split("#")[0]
+        
     df['Tag'] = pd.Series([csvfile] * len(df.index))
     df['RunId'] = pd.Series([runId] * len(df.index))
     # print(df.head())
