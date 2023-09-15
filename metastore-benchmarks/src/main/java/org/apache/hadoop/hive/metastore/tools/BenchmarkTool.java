@@ -223,15 +223,9 @@ public class BenchmarkTool implements Runnable {
 
     try (HMSClient client = new HMSClient(getServerUri(host, String.valueOf(port)), confDir)) {
       bData.setClient(client);
-
-      try{
-        if (!client.dbExists(dbName)) {
-          client.createDatabase(dbName);
-        }
-      }
-      catch (Exception e) {
-        e.printStackTrace();
-        dbName = dbName + "Dummy";
+      
+      if (!client.dbExists(dbName)) {
+        client.createDatabase(dbName);
       }
 
       if (client.tableExists(dbName, tableName)) {

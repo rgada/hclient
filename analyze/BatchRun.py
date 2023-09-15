@@ -167,7 +167,7 @@ def main(argv):
             file = file + f"{curr}{INSTANCES.split('-')[-1]}"
         file = "Run"+run_tag+str(index)+"_"+file + "_" + capacity_tag
 
-        cmd_base = cmd + DBNAME + " " + file
+        cmd_base = cmd
 
         # we have multiple hosts, run in parallel and generate comma seperate commands
         hostsplits = hosts.split(',')
@@ -177,7 +177,7 @@ def main(argv):
         for host in hostsplits:
             file_name = file + "#" + str(hostinstance)
 
-            curr = cmd_base + " " +OUTPUT + " "+file_name+".csv"
+            curr = cmd_base + " " +OUTPUT + " "+file_name+".csv" + " " + DBNAME + " " + file_name
             
             curr = HOST + " " + host + " " + script +" "+ curr
 
