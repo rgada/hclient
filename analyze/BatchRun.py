@@ -4,6 +4,8 @@
 Usage:
 nohup python3 analyze/BatchRun.py -t 5,10,20 -c 102,502,1002 -p 100,500,1000 -i 100,1000 -o descending -l "8GBHeap_Pool10_instance1" -s "-H dbrscale-w5f1fv-gateway0.dbrscale.svbr-nqvp.int.cldr.work --savedata /tmp/benchdata --sanitize -CR -M 'addPartition' -M 'getPartitions' -M 'getPartitionNames' -M 'dropPartitions' -M 'getTable'" &
 
+nohup python3 analyze/BatchRun.py -u dbrscale-w5f1fv-gateway0.dbrscale.svbr-nqvp.int.cldr.work  -r a -t 5,10,20 -c 100,500,1000 -p 100,500,1000 -i 100 -o descending -l "8GBH_20P_01I_AddPartitions" -s "--savedata /tmp/benchdata --sanitize -CR -M 'addPartition.*'" &
+
 
 Out:
 multiple csv for each configuration
