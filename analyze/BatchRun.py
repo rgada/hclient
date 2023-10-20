@@ -6,6 +6,7 @@ nohup python3 analyze/BatchRun.py -t 5,10,20 -c 102,502,1002 -p 100,500,1000 -i 
 
 nohup python3 analyze/BatchRun.py -u dbrscale-w5f1fv-gateway0.dbrscale.svbr-nqvp.int.cldr.work  -r a -t 5,10,20 -c 100,500,1000 -p 100,500,1000 -i 100 -o descending -l "8GBH_20P_01I_AddPartitions" -s "--savedata /tmp/benchdata --sanitize -CR -M 'addPartition.*'" &
 
+python3 analyze/BatchRun.py -u dbrscale-w5f1fv-gateway0.dbrscale.svbr-nqvp.int.cldr.work  -r a -t 20 -c 1000 -p 1000 -i 100 -o descending -l "8GBH_20P_01I_AddPartitions" -s "--savedata /tmp/benchdata --sanitize -CR -M 'addPartition.*'"
 
 Out:
 multiple csv for each configuration
@@ -77,6 +78,7 @@ def main(argv):
     HOST="-H"
     ASCENDING = "ascending"
     DESCENDING = "descending"
+    MAX = "max"
 
     for opt, arg in opts:
         if opt == '-h':
@@ -109,6 +111,10 @@ def main(argv):
             run_tag = arg
         elif opt in ("-u", "--hosturi"):
             hosts = arg
+
+    original_order = order
+    if order == MAX:
+        order = ASCENDING
 
     out = []
     files = []
@@ -161,9 +167,13 @@ def main(argv):
                 cmd = cmd + key + " "+ input[key][0]+" "
                 file = file+ f"{input[key][0]}{key.split('-')[-1]}_"
 
-    out.append(cmd)
+    if cmd not in out:
+        out.append(cmd)
     files.append(file)
-    
+
+    # for c in out:
+    #     print(c)
+
     fullcmd = []
     for index in range(len(out)):
         #print(index)
@@ -197,9 +207,13 @@ def main(argv):
 
             hostinstance = hostinstance + 1
 
-        #print(cmd)
         if cmd not in fullcmd:
             fullcmd.append(cmd)
+
+    # in max case we set the order back to ascending and
+    # and just send the max load for execution 
+    if original_order == MAX:
+        fullcmd = [fullcmd[len(fullcmd)-1]]
 
     execute_run(fullcmd)
 
