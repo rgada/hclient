@@ -18,13 +18,13 @@ import pandas as pd
 li = []
 
 # get the runid
-parser = argparse.ArgumentParser(description='RunID')
+parser = argparse.ArgumentParser(description='TimeStamp')
 # parser.add_argument('-path', '--path', help='path of pem key',required=True)
-parser.add_argument('-runId', '--runId', type=str,
+parser.add_argument('-timeStamp', '--timeStamp', type=str,
                     required=True,
-                    help='RunID for the run')
+                    help='timestamp for the run')
 args = parser.parse_args()
-runId = args.runId
+timeStamp = args.timeStamp
 
 for csvfile in csvfiles:
     df = pd.read_csv(csvfile,delimiter='\t')
@@ -32,7 +32,7 @@ for csvfile in csvfiles:
         csvfile = csvfile.split("#")[0]
         
     df['Tag'] = pd.Series([csvfile] * len(df.index))
-    df['RunId'] = pd.Series([runId] * len(df.index))
+    df['@timestamp'] = pd.Series([timeStamp] * len(df.index))
     # print(df.head())
     li.append(df)
 
