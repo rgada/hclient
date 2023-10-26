@@ -2,6 +2,7 @@
 # python3 analyze/ResultAggregator.py --runId temp1
 
 import argparse
+import json
 
 # read all the csv files in the folder
 import glob
@@ -18,13 +19,13 @@ import pandas as pd
 li = []
 
 # get the runid
-parser = argparse.ArgumentParser(description='TimeStamp')
+parser = argparse.ArgumentParser(description='runId')
 # parser.add_argument('-path', '--path', help='path of pem key',required=True)
-parser.add_argument('-timeStamp', '--timeStamp', type=str,
+parser.add_argument('-runId', '--runId', type=str,
                     required=True,
-                    help='timestamp for the run')
+                    help='runId for the run')
 args = parser.parse_args()
-timeStamp = args.timeStamp
+runId = args.runId
 
 for csvfile in csvfiles:
     df = pd.read_csv(csvfile,delimiter='\t')
@@ -32,12 +33,11 @@ for csvfile in csvfiles:
         csvfile = csvfile.split("#")[0]
         
     df['Tag'] = pd.Series([csvfile] * len(df.index))
-    df['@timestamp'] = pd.Series([timeStamp] * len(df.index))
+    df['runId'] = pd.Series([runId] * len(df.index))
     # print(df.head())
     li.append(df)
 
 df = pd.concat(li,axis=0, ignore_index=True)
 # print(df.head())
-
-df.to_csv("master.csv")
-df.to_json("master.json")
+df.to_csv("master.csv", index=False)
+df.to_json("master.json",orient='table')
