@@ -1,5 +1,5 @@
 ## usage
-# python3 analyze/ResultAggregator.py --runId temp1
+# python3 analyze/ResultAggregator.py --job_name st-jmeterts-g6kzc0 --timestamp 2023-10-26T13:23:23Z
 
 import argparse
 import json
@@ -18,14 +18,21 @@ import pandas as pd
 
 li = []
 
-# get the runid
-parser = argparse.ArgumentParser(description='runId')
+# get the job_name
+parser = argparse.ArgumentParser(description='job_name')
 # parser.add_argument('-path', '--path', help='path of pem key',required=True)
-parser.add_argument('-runId', '--runId', type=str,
+parser.add_argument('-job_name', '--job_name', type=str,
                     required=True,
-                    help='runId for the run')
+                    help='job_name for the run')
+
+# parser.add_argument('-path', '--path', help='path of pem key',required=True)
+parser.add_argument('-timestamp', '--timestamp', type=str,
+                    required=True,
+                    help='timestamp for the run')
+
 args = parser.parse_args()
-runId = args.runId
+job_name = args.job_name
+timestamp = args.timestamp
 
 for csvfile in csvfiles:
     df = pd.read_csv(csvfile,delimiter='\t')
@@ -33,11 +40,16 @@ for csvfile in csvfiles:
         csvfile = csvfile.split("#")[0]
         
     df['Tag'] = pd.Series([csvfile] * len(df.index))
-    df['runId'] = pd.Series([runId] * len(df.index))
-    # print(df.head())
+    df['job_name'] = pd.Series([job_name] * len(df.index))
+    df['@timestamp'] = pd.Series([timestamp] * len(df.index))
+       
     li.append(df)
 
+# now concatenate the list
 df = pd.concat(li,axis=0, ignore_index=True)
-# print(df.head())
+
+# rename for proper indexing in elasticsearch
+df = df.rename(columns={'Operation': 'Opr', 'ResponseTime': 'RspTime', 'Tag': 'Label'})
+
+# convert to master csv to be sent to elastic
 df.to_csv("master.csv", index=False)
-df.to_json("master.json",orient='table')
