@@ -35,12 +35,20 @@ def execute_run(cmdList, host_count):
             currinstance = 0
             spincount = int(float(DEFAULT_SPIN / host_count))
             for currcmd in cmdsplits:
+                #reduce the number of threads inversely to number of hosts
+                #extract threads and distribute per host
+                threadsplit = currcmd.split("-T")
+                firsthalf = threadsplit[0]
+                distributed_threads = int(int(threadsplit[1].split(" ")[1])/host_count)
+                secondhalf = ' '.join(threadsplit[1].split(" ")[2:])
+                currcmd = firsthalf + secondhalf
+
                 if currinstance == (len(cmdsplits) - 1):
-                    currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount)
+                    currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " -T "+ str(distributed_threads)
                     logger.info("waiting for cmd - "+currcmd)
                     subprocess.call(["bin/hbench",currcmd])
                 else:
-                    currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount)
+                    currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " -T "+ str(distributed_threads)
                     logger.info("triggering background for cmd - "+currcmd)
                     subprocess.Popen(["bin/hbench",currcmd])
                 currinstance = currinstance + 1
