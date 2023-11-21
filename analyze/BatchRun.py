@@ -24,16 +24,16 @@ logging.basicConfig(level=logging.INFO)
 
 DEFAULT_SPIN = 100
 SPIN_COUNT = "--spin"
+COMMAND_DELIMITER = ";"
 
-def execute_run(cmdList):
+def execute_run(cmdList, host_count):
 
     try:
         for cmd in cmdList:
-
-            cmdsplits = cmd.split(';')
+            cmdsplits = cmd.split(COMMAND_DELIMITER)
 
             currinstance = 0
-            spincount = int(float(DEFAULT_SPIN / len(cmdsplits)))
+            spincount = int(float(DEFAULT_SPIN / host_count))
             for currcmd in cmdsplits:
                 if currinstance == (len(cmdsplits) - 1):
                     currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount)
@@ -55,21 +55,22 @@ def main(argv):
     instances = [100]
 
     try:
-        opts, args = getopt.getopt(argv, "ht:c:p:i:o:s:l:r:u:",
-                                   ["help", "numThreads=", "numCols=", "numPart=", "numInstances=","order=","script=","capacitytag=","runtag=","hosturi="])
+        opts, args = getopt.getopt(argv, "ht:c:p:i:o:s:l:r:u:k:",
+                                   ["help", "numThreads=", "numCols=", "numPart=", "numInstances=","order=","script=","capacitytag=","runtag=","hosturi=","krandom="])
     except getopt.GetoptError:
         logger.info(
-            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi>')
+            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness>')
         sys.exit(2)
 
     if len(opts) == 0:
         logger.info(
-            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi>')
+            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness>')
         sys.exit(2)
 
     print(opts)
     input = {}
     THREADS = "-T"
+    APIS = "-M"
     COLUMNS = "--columns"
     INSTANCES = "-N"
     PARTITIONS = "--params"
@@ -83,7 +84,7 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h':
             logger.info(
-                'hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi>')
+                'hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness>')
             sys.exit()
         elif opt in ("-t", "--numThreads"):
             threadsString = arg
@@ -111,6 +112,8 @@ def main(argv):
             run_tag = arg
         elif opt in ("-u", "--hosturi"):
             hosts = arg
+        elif opt in ("-k", "--krandom"):
+            random = arg
 
     original_order = order
     if order == MAX:
@@ -187,25 +190,52 @@ def main(argv):
 
         cmd_base = cmd
 
-        # we have multiple hosts, run in parallel and generate comma seperate commands
-        hostsplits = hosts.split(',')
-        
-        hostinstance = 0
-        cmd = ""
-        for host in hostsplits:
-            file_name = file + "#" + str(hostinstance)
+        # in case of random concurrent run
+        if random == "1":
+            # we have multiple hosts, run in parallel and generate comma seperate commands
+            hostsplits = hosts.split(',')
+            apisplits = script.split(APIS)
+            curr_script = apisplits[0] # set the first half of command
+            apis = apisplits[1:]
+            hostinstance = 0
+            cmd = ""
+            cmd_instance = 0
 
-            curr = cmd_base + " " +OUTPUT + " "+file_name+".csv" + " " + DBNAME + " " + file_name
+            for host in hostsplits:
+                for api in apis:
+                    file_name = file + "#" + str(cmd_instance)
+
+                    curr = cmd_base + " " +OUTPUT + " "+file_name+".csv" + " " + DBNAME + " " + file_name
+                    
+                    curr = HOST + " " + host + " " + curr_script + APIS + api+ " " + curr
+
+                    # add delimiter
+                    if (cmd_instance < ((len(hostsplits) * len(apis)) - 1)):
+                        cmd = cmd + curr + COMMAND_DELIMITER
+                    else:
+                        cmd = cmd + curr
+
+                    cmd_instance = cmd_instance + 1
+        else:
+            # we have multiple hosts, run in parallel and generate comma seperate commands
+            hostsplits = hosts.split(',')
             
-            curr = HOST + " " + host + " " + script +" "+ curr
+            hostinstance = 0
+            cmd = ""
+            for host in hostsplits:
+                file_name = file + "#" + str(hostinstance)
 
-            # add delimiter
-            if (hostinstance < (len(hostsplits) - 1)):
-                cmd = cmd + curr + ";"
-            else:
-                cmd = cmd + curr
+                curr = cmd_base + " " +OUTPUT + " "+file_name+".csv" + " " + DBNAME + " " + file_name
+                
+                curr = HOST + " " + host + " " + script +" "+ curr
 
-            hostinstance = hostinstance + 1
+                # add delimiter
+                if (hostinstance < (len(hostsplits) - 1)):
+                    cmd = cmd + curr + ";"
+                else:
+                    cmd = cmd + curr
+
+                hostinstance = hostinstance + 1
 
         if cmd not in fullcmd:
             fullcmd.append(cmd)
@@ -215,7 +245,7 @@ def main(argv):
     if original_order == MAX:
         fullcmd = [fullcmd[len(fullcmd)-1]]
 
-    execute_run(fullcmd)
+    execute_run(fullcmd, len(hostsplits))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
