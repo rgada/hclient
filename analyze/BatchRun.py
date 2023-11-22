@@ -39,7 +39,7 @@ def execute_run(cmdList, host_count):
                 #extract threads and distribute per host
                 threadsplit = currcmd.split("-T")
                 firsthalf = threadsplit[0]
-                distributed_threads = int(int(threadsplit[1].split(" ")[1])/host_count)
+                distributed_threads = int(int(threadsplit[1].split(" ")[1])/(len(cmdsplits)))
                 secondhalf = ' '.join(threadsplit[1].split(" ")[2:])
                 currcmd = firsthalf + secondhalf
 
