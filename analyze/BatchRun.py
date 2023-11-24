@@ -34,6 +34,7 @@ def execute_run(cmdList, host_count):
 
             currinstance = 0
             spincount = int(float(DEFAULT_SPIN / host_count))
+            processes = []
             for currcmd in cmdsplits:
                 #reduce the number of threads inversely to number of hosts
                 #extract threads and distribute per host
@@ -43,15 +44,14 @@ def execute_run(cmdList, host_count):
                 secondhalf = ' '.join(threadsplit[1].split(" ")[2:])
                 currcmd = firsthalf + secondhalf
 
-                if currinstance == (len(cmdsplits) - 1):
-                    currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " -T "+ str(distributed_threads)
-                    logger.info("waiting for cmd - "+currcmd)
-                    subprocess.call(["bin/hbench",currcmd])
-                else:
-                    currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " -T "+ str(distributed_threads)
-                    logger.info("triggering background for cmd - "+currcmd)
-                    subprocess.Popen(["bin/hbench",currcmd])
+                currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " -T "+ str(distributed_threads)
+                logger.info("triggering background for cmd - "+currcmd)
+                pid = subprocess.Popen(["bin/hbench",currcmd])
+                processes.append(pid)
                 currinstance = currinstance + 1
+            exit_codes = [p.wait() for p in processes]
+            logger.info("done with all the processes")
+            logger.info(exit_codes)
     except:
         logger.info("oops some problem injecting " + str(x))
 
