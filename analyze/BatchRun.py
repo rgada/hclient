@@ -77,7 +77,7 @@ def main(argv):
 
     print(opts)
     input = {}
-    THREADS = "-T"
+    THREADS = "--threads"
     APIS = "-M"
     COLUMNS = "--columns"
     INSTANCES = "-N"
