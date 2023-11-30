@@ -26,6 +26,18 @@ DEFAULT_SPIN = 100
 SPIN_COUNT = "--spin"
 COMMAND_DELIMITER = ";"
 
+THREADS = "--threads"
+APIS = "-M"
+COLUMNS = "--columns"
+INSTANCES = "-N"
+PARTITIONS = "--params"
+OUTPUT = "-o"
+DBNAME = "-d"
+HOST="-H"
+ASCENDING = "ascending"
+DESCENDING = "descending"
+MAX = "max"
+
 def execute_run(cmdList, host_count):
 
     try:
@@ -38,13 +50,13 @@ def execute_run(cmdList, host_count):
             for currcmd in cmdsplits:
                 #reduce the number of threads inversely to number of hosts
                 #extract threads and distribute per host
-                threadsplit = currcmd.split("-T")
+                threadsplit = currcmd.split(THREADS)
                 firsthalf = threadsplit[0]
                 distributed_threads = int(int(threadsplit[1].split(" ")[1])/(len(cmdsplits)))
                 secondhalf = ' '.join(threadsplit[1].split(" ")[2:])
                 currcmd = firsthalf + secondhalf
 
-                currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " -T "+ str(distributed_threads)
+                currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " " + THREADS + " "+ str(distributed_threads)
                 logger.info("triggering background for cmd - "+currcmd)
                 pid = subprocess.Popen(["bin/hbench",currcmd])
                 processes.append(pid)
@@ -77,17 +89,6 @@ def main(argv):
 
     print(opts)
     input = {}
-    THREADS = "--threads"
-    APIS = "-M"
-    COLUMNS = "--columns"
-    INSTANCES = "-N"
-    PARTITIONS = "--params"
-    OUTPUT = "-o"
-    DBNAME = "-d"
-    HOST="-H"
-    ASCENDING = "ascending"
-    DESCENDING = "descending"
-    MAX = "max"
 
     for opt, arg in opts:
         if opt == '-h':
