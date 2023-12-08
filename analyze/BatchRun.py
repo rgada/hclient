@@ -22,7 +22,7 @@ import time
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-DEFAULT_SPIN = 150
+DEFAULT_SPIN = 500
 SPIN_COUNT = "--spin"
 COMMAND_DELIMITER = ";"
 
