@@ -38,7 +38,7 @@ ASCENDING = "ascending"
 DESCENDING = "descending"
 MAX = "max"
 
-def execute_run(cmdList, host_count):
+def execute_run(cmdList, host_count, curr_dir):
 
     try:
         for cmd in cmdList:
@@ -58,7 +58,7 @@ def execute_run(cmdList, host_count):
 
                 currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " " + THREADS + " "+ str(distributed_threads)
                 logger.info("triggering background for cmd - "+currcmd)
-                pid = subprocess.Popen(["bin/hbench",currcmd])
+                pid = subprocess.Popen([curr_dir+"bin/hbench",currcmd])
                 processes.append(pid)
                 currinstance = currinstance + 1
             exit_codes = [p.wait() for p in processes]
@@ -75,16 +75,16 @@ def main(argv):
     instances = [100]
 
     try:
-        opts, args = getopt.getopt(argv, "ht:c:p:i:o:s:l:r:u:k:",
-                                   ["help", "numThreads=", "numCols=", "numPart=", "numInstances=","order=","script=","capacitytag=","runtag=","hosturi=","krandom="])
+        opts, args = getopt.getopt(argv, "ht:c:p:i:o:s:l:r:u:k:d:",
+                                   ["help", "numThreads=", "numCols=", "numPart=", "numInstances=","order=","script=","capacitytag=","runtag=","hosturi=","krandom=","dir="])
     except getopt.GetoptError:
         logger.info(
-            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness>')
+            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness> -d <curr_directory>')
         sys.exit(2)
 
     if len(opts) == 0:
         logger.info(
-            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness>')
+            'invalid usage : hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness> -d <curr_directory>')
         sys.exit(2)
 
     print(opts)
@@ -93,7 +93,7 @@ def main(argv):
     for opt, arg in opts:
         if opt == '-h':
             logger.info(
-                'hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness>')
+                'hms_meta_partition.py -t <numThreads> -c <numCols> -p <numParts> -i <numInstances> -o <order> -s <script> -l <capacitytag> -r <runtag> -u <hosturi> -k <randomness> -d <curr_directory>')
             sys.exit()
         elif opt in ("-t", "--numThreads"):
             threadsString = arg
@@ -123,6 +123,8 @@ def main(argv):
             hosts = arg
         elif opt in ("-k", "--krandom"):
             random = arg
+        elif opt in ("-d", "--dir"):
+            curr_dir = arg
 
     original_order = order
     if order == MAX:
@@ -254,7 +256,7 @@ def main(argv):
     if original_order == MAX:
         fullcmd = [fullcmd[len(fullcmd)-1]]
 
-    execute_run(fullcmd, len(hostsplits))
+    execute_run(fullcmd, len(hostsplits), curr_dir)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
