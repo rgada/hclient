@@ -58,7 +58,7 @@ def execute_run(cmdList, host_count, curr_dir):
 
                 currcmd = currcmd + " " + SPIN_COUNT + " " + str(spincount) + " " + THREADS + " "+ str(distributed_threads)
                 logger.info("triggering background for cmd - "+currcmd)
-                pid = subprocess.Popen([curr_dir+"bin/hbench",currcmd])
+                pid = subprocess.Popen([curr_dir+"/bin/hbench",currcmd])
                 processes.append(pid)
                 currinstance = currinstance + 1
             exit_codes = [p.wait() for p in processes]
