@@ -16,7 +16,7 @@
 # limitations under the License.
 
 MAIN=org.apache.hadoop.hive.metastore.tools.BenchmarkTool
-myhome=$(git rev-parse --show-toplevel)
+myhome=gitpath
 
 # Run SentryMain class. Maven takes care of all classpath dependencies.
 mvn -f ${myhome}/metastore-benchmarks/pom.xml exec:java -Dexec.mainClass=${MAIN} \
