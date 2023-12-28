@@ -31,7 +31,10 @@ For example:
 |----------------------|
 | bin/hbench -H dbrscale-s3wcoy-gateway1.dbrscale.svbr-nqvp.int.cldr.work --savedata /tmp/benchdata --sanitize -CR -M addPartition.* -M dropPartition.* -M getPartition.* -M listPartition.* --columns 501 --params 1000 -N 100  -o Runc5_50threads_501columns_1000params_100N_10P_2I_17179869184H_test168#0.csv -d Runc5_50threads_501columns_1000params_100N_10P_2I_17179869184H_test168#0 --spin 100 --threads 50 |
 
-
+.
+.
+.
+.
 
 
 | Command with ascending             |
@@ -46,7 +49,10 @@ For example:
 | bin/hbench -H dbrscale-s3wcoy-gateway1.dbrscale.svbr-nqvp.int.cldr.work --savedata /tmp/benchdata --sanitize -CR -M addPartition.* -M dropPartition.* -M getPartition.* -M listPartition.* --columns 101 --params 1000 -N 100  -o Runc4_15threads_101columns_1000params_100N_10P_2I_17179869184H_test168#0.csv -d Runc4_15threads_101columns_1000params_100N_10P_2I_17179869184H_test168#0 --spin 100 --threads 15 |
 | bin/hbench -H dbrscale-s3wcoy-gateway1.dbrscale.svbr-nqvp.int.cldr.work --savedata /tmp/benchdata --sanitize -CR -M addPartition.* -M dropPartition.* -M getPartition.* -M listPartition.* --columns 501 --params 1000 -N 100  -o Runc5_50threads_501columns_1000params_100N_10P_2I_17179869184H_test168#0.csv -d Runc5_50threads_501columns_1000params_100N_10P_2I_17179869184H_test168#0 --spin 100 --threads 50 |
 
-
+.
+.
+.
+.
 
 | Command with ascending and multiple hosts            |
 |----------------------|
@@ -66,7 +72,10 @@ For example:
 | bin/hbench -H dbrscale-s3wcoy-gateway0.dbrscale.svbr-nqvp.int.cldr.work --savedata /tmp/benchdata --sanitize -CR -M addPartition.* -M dropPartition.* -M getPartition.* -M listPartition.* --columns 501 --params 1000 -N 100  -o Runc5_50threads_501columns_1000params_100N_10P_2I_17179869184H_test168#0.csv -d Runc5_50threads_501columns_1000params_100N_10P_2I_17179869184H_test168#0 --spin 50 --threads 25 |
 | bin/hbench -H dbrscale-s3wcoy-gateway1.dbrscale.svbr-nqvp.int.cldr.work --savedata /tmp/benchdata --sanitize -CR -M addPartition.* -M dropPartition.* -M getPartition.* -M listPartition.* --columns 501 --params 1000 -N 100  -o Runc5_50threads_501columns_1000params_100N_10P_2I_17179869184H_test168#1.csv -d Runc5_50threads_501columns_1000params_100N_10P_2I_17179869184H_test168#1 --spin 50 --threads 25 |
 
-
+.
+.
+.
+.
 
 
 
