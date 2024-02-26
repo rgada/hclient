@@ -122,7 +122,7 @@ def main(argv):
         elif opt in ("-u", "--hosturi"):
             hosts = arg
         elif opt in ("-k", "--krandom"):
-            random = arg
+            random = arg == 'true'
         elif opt in ("-d", "--dir"):
             curr_dir = arg
 
@@ -202,7 +202,7 @@ def main(argv):
         cmd_base = cmd
 
         # in case of random concurrent run
-        if random == "1":
+        if random:
             # we have multiple hosts, run in parallel and generate comma seperate commands
             hostsplits = hosts.split(',')
             apisplits = script.split(APIS)
